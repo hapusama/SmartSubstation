@@ -1,0 +1,4 @@
+# Include local sources
+OBJS += \
+	$O/src/apps/SvGeneratorApp.o \
+	$O/src/apps/DifferentialProtectionApp.o

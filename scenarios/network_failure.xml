@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<scenario>
+    <!-- 仿真开始: 所有设备启动 -->
+    <at t="0s">
+        <start module="**"/>
+    </at>
+    
+    <!-- 正常运行阶段: 0-0.5s -->
+    <interval from="0s" to="0.5s">
+        <set-param module="**" param="**.operational" value="true"/>
+    </interval>
+    
+    <!-- 引入网络故障: 0.5s -->
+    <at t="0.5s">
+        <!-- 模拟甲站到OTN的链路故障 -->
+        <set-param module="stationA.tsnSwitch.eth[11].channel" param="disabled" value="true"/>
+        <log level="info">"链路故障: 甲站TSN交换机到OTN设备的链路断开"</log>
+    </at>
+    
+    <!-- 故障持续阶段: 0.5-1.0s -->
+    <interval from="0.5s" to="1.0s">
+        <!-- 监控保护业务是否通过冗余路径传输 -->
+        <record module="**.station*.mu*.app" param="svDelay" event="end"/>
+        <record module="**.station*.protection*.gooseApp" param="gooseDelay" event="end"/>
+    </interval>
+    
+    <!-- 故障恢复: 1.0s -->
+    <at t="1.0s">
+        <set-param module="stationA.tsnSwitch.eth[11].channel" param="disabled" value="false"/>
+        <log level="info">"链路恢复: 甲站TSN交换机到OTN设备的链路恢复"</log>
+    </at>
+    
+    <!-- 恢复后监控: 1.0-2.0s -->
+    <interval from="1.0s" to="2.0s">
+        <record module="**.station*.mu*.app" param="svDelay" event="end"/>
+        <record module="**.station*.protection*.gooseApp" param="gooseDelay" event="end"/>
+        <record module="**.station*.tsnSwitch" param="**.recoveryTime" event="end"/>
+    </interval>
+    
+    <!-- 仿真结束: 2.0s -->
+    <at t="2.0s">
+        <stop/>
+    </at>
+</scenario>
