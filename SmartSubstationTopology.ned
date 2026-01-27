@@ -25,196 +25,196 @@ channel WanChannel extends ned.DatarateChannel
 network SmartSubstationTopology
 {
     parameters:
-        @display("bgb=3485.8,2479.125");
+        @display("bgb=13551.221,8415.881");
 
     submodules:
         // 网络配置器
         configurator: Ipv4NetworkConfigurator {
-            @display("p=928.54504,108.18");
+            @display("p=6992.128,1415.3099");
         }
 
         // 甲站设备
         TSN_A: EthernetSwitch {
-            @display("p=500,300;i=block/switch,blue");
+            @display("p=4340.2837,4156.542;i=block/switch,blue");
         }
         // 甲站各类接入TSN（保护、母线SV分三条、视频语音/运维）
         TSN_A_ACC_PROT: EthernetSwitch {
-            @display("p=350,210;i=block/switch,blue");
+            @display("p=2045.992,2944.838;i=block/switch,blue");
         }
         TSN_A_ACC_BUS1: EthernetSwitch {
-            @display("p=280,340;i=block/switch,blue");
+            @display("p=1042.86,3828.786;i=block/switch,blue");
         }
         TSN_A_ACC_BUS2: EthernetSwitch {
-            @display("p=340,380;i=block/switch,blue");
+            @display("p=4042.324,2180.074;i=block/switch,blue");
         }
         TSN_A_ACC_BUS3: EthernetSwitch {
-            @display("p=400,340;i=block/switch,blue");
+            @display("p=3237.832,2244.6318;i=block/switch,blue");
         }
         TSN_A_ACC_CAM1: EthernetSwitch {
-            @display("p=320,520;i=block/switch,blue");
+            @display("p=1897.012,5214.3;i=block/switch,blue");
         }
         TSN_A_ACC_CAM2: EthernetSwitch {
-            @display("p=320,700;i=block/switch,blue");
+            @display("p=5815.186,5795.322;i=block/switch,blue");
         }
         MU_A: StandardHost {
-            @display("p=260,170;i=block/switch,green");
+            @display("p=1042.86,2274.428;i=block/switch,green");
         }
         Protection_A: StandardHost {
-            @display("p=330,150;i=block/computer,red");
+            @display("p=2165.176,1946.672;i=block/computer,red");
         }
         IT_A: StandardHost {
-            @display("p=430,200;i=block/plug,blue");
+            @display("p=1464.97,1867.216;i=block/plug,blue");
         }
         BusProtection_MU1_A: StandardHost {
-            @display("p=220,330;i=block/switch,yellow");
+            @display("p=461.83798,3098.784;i=block/switch,yellow");
         }
         BusProtection_MU2_A: StandardHost {
-            @display("p=280,400;i=block/switch,yellow");
+            @display("p=4201.236,1176.942;i=block/switch,yellow");
         }
         BusProtection_MU3_A: StandardHost {
-            @display("p=440,330;i=block/switch,yellow");
+            @display("p=2790.8918,1261.364;i=block/switch,yellow");
         }
         BusProtection_A: StandardHost {
-            @display("p=600,330;i=block/computer,orange");
+            @display("p=6098.248,2334.02;i=block/computer,orange");
         }
         Camera1_A: StandardHost {
-            @display("p=200,500;i=device/camera,gray");
+            @display("p=253.26599,5517.226;i=device/camera,gray");
         }
         Camera2_A: StandardHost {
-            @display("p=260,520;i=device/camera,gray");
+            @display("p=2329.054,6743.8276;i=device/camera,gray");
         }
         Camera3_A: StandardHost {
-            @display("p=320,500;i=device/camera,gray");
+            @display("p=585.988,4777.292;i=device/camera,gray");
         }
         Camera4_A: StandardHost {
-            @display("p=380,520;i=device/camera,gray");
+            @display("p=3113.682,5288.79;i=device/camera,gray");
         }
         Camera5_A: StandardHost {
-            @display("p=440,500;i=device/camera,gray");
+            @display("p=1018.02997,6301.854;i=device/camera,gray");
         }
         Camera6_A: StandardHost {
-            @display("p=200,680;i=device/camera,gray");
+            @display("p=4767.36,6038.656;i=device/camera,gray");
         }
         Camera7_A: StandardHost {
-            @display("p=260,720;i=device/camera,gray");
+            @display("p=6694.168,5844.982;i=device/camera,gray");
         }
         Camera8_A: StandardHost {
-            @display("p=320,680;i=device/camera,gray");
+            @display("p=4881.578,6699.134;i=device/camera,gray");
         }
         Camera9_A: StandardHost {
-            @display("p=380,720;i=device/camera,gray");
+            @display("p=5522.192,7026.8896;i=device/camera,gray");
         }
         Camera10_A: StandardHost {
-            @display("p=440,680;i=device/camera,gray");
+            @display("p=6460.766,7170.904;i=device/camera,gray");
         }
         VoIP1_A: StandardHost {
-            @display("p=520,520;i=device/phone,gray");
+            @display("p=3361.982,6108.1797;i=device/phone,gray");
         }
         VoIP2_A: StandardHost {
-            @display("p=520,700;i=device/phone,gray");
+            @display("p=6639.542,6356.48;i=device/phone,gray");
         }
         MonitoringCenter_A: StandardHost {
-            @display("p=640,500;i=block/server,blue");
+            @display("p=5462.6,1628.848;i=block/server,blue");
         }
 
         // 乙站设备（整体右移以便区分）
         TSN_B: EthernetSwitch {
-            @display("p=1800,300;i=block/switch,blue");
+            @display("p=11039.418,4350.216;i=block/switch,blue");
         }
         // 乙站各类接入TSN
         TSN_B_ACC_PROT: EthernetSwitch {
-            @display("p=1650,210;i=block/switch,blue");
+            @display("p=10711.662,2060.89;i=block/switch,blue");
         }
         TSN_B_ACC_BUS1: EthernetSwitch {
-            @display("p=1580,340;i=block/switch,blue");
+            @display("p=12102.142,5760.56;i=block/switch,blue");
         }
         TSN_B_ACC_BUS2: EthernetSwitch {
-            @display("p=1640,380;i=block/switch,blue");
+            @display("p=10815.948,5844.982;i=block/switch,blue");
         }
         TSN_B_ACC_BUS3: EthernetSwitch {
-            @display("p=1700,340;i=block/switch,blue");
+            @display("p=9763.156,5795.322;i=block/switch,blue");
         }
         TSN_B_ACC_CAM1: EthernetSwitch {
-            @display("p=1620,520;i=block/switch,blue");
+            @display("p=8760.023,1961.57;i=block/switch,blue");
         }
         TSN_B_ACC_CAM2: EthernetSwitch {
-            @display("p=1620,700;i=block/switch,blue");
+            @display("p=12186.563,2468.102;i=block/switch,blue");
         }
         MU_B: StandardHost {
-            @display("p=1610,170;i=block/switch,green");
+            @display("p=10642.138,1206.7379;i=block/switch,green");
         }
         Protection_B: StandardHost {
-            @display("p=1680,150;i=block/computer,red");
+            @display("p=11272.819,1296.126;i=block/computer,red");
         }
         IT_B: StandardHost {
-            @display("p=1780,200;i=block/plug,blue");
+            @display("p=10170.368,1355.718;i=block/plug,blue");
         }
         BusProtection_MU1_B: StandardHost {
-            @display("p=1540,330;i=block/switch,yellow");
+            @display("p=12295.815,6977.23;i=block/switch,yellow");
         }
         BusProtection_MU2_B: StandardHost {
-            @display("p=1600,400;i=block/switch,yellow");
+            @display("p=10711.662,6942.468;i=block/switch,yellow");
         }
         BusProtection_MU3_B: StandardHost {
-            @display("p=1760,330;i=block/switch,yellow");
+            @display("p=9614.176,6892.8076;i=block/switch,yellow");
         }
         BusProtection_B: StandardHost {
-            @display("p=1920,330;i=block/computer,orange");
+            @display("p=12881.804,4201.236;i=block/computer,orange");
         }
         Camera1_B: StandardHost {
-            @display("p=1500,500;i=device/camera,gray");
+            @display("p=7637.708,1584.1539;i=device/camera,gray");
         }
         Camera2_B: StandardHost {
-            @display("p=1560,520;i=device/camera,gray");
+            @display("p=8278.322,1167.01;i=device/camera,gray");
         }
         Camera3_B: StandardHost {
-            @display("p=1620,500;i=device/camera,gray");
+            @display("p=7667.504,2244.6318;i=device/camera,gray");
         }
         Camera4_B: StandardHost {
-            @display("p=1680,520;i=device/camera,gray");
+            @display("p=8665.67,2706.47;i=device/camera,gray");
         }
         Camera5_B: StandardHost {
-            @display("p=1740,500;i=device/camera,gray");
+            @display("p=9529.754,1752.9979;i=device/camera,gray");
         }
         Camera6_B: StandardHost {
-            @display("p=1500,680;i=device/camera,gray");
+            @display("p=11655.202,1877.148;i=device/camera,gray");
         }
         Camera7_B: StandardHost {
-            @display("p=1560,720;i=device/camera,gray");
+            @display("p=13115.206,2845.5178;i=device/camera,gray");
         }
         Camera8_B: StandardHost {
-            @display("p=1620,680;i=device/camera,gray");
+            @display("p=11312.548,2353.884;i=device/camera,gray");
         }
         Camera9_B: StandardHost {
-            @display("p=1680,720;i=device/camera,gray");
+            @display("p=12380.237,3287.492;i=device/camera,gray");
         }
         Camera10_B: StandardHost {
-            @display("p=1740,680;i=device/camera,gray");
+            @display("p=13075.478,2160.21;i=device/camera,gray");
         }
         VoIP1_B: StandardHost {
-            @display("p=1820,520;i=device/phone,gray");
+            @display("p=9008.324,1167.01;i=device/phone,gray");
         }
         VoIP2_B: StandardHost {
-            @display("p=3481.166,898.846;i=device/phone,gray");
+            @display("p=12568.945,1738.1;i=device/phone,gray");
         }
         MonitoringCenter_B: StandardHost {
-            @display("p=2964.702,715.104;i=block/server,blue");
+            @display("p=12881.804,4970.966;i=block/server,blue");
         }
 
         // 主站监控中心
         MonitoringCenter_Main: StandardHost {
-            @display("p=1200,500;i=block/server,cyan");
+            @display("p=8139.274,3630.146;i=block/server,cyan");
         }
 
         // 跨域网络设备
         borderGateway1: Router {
-            @display("p=1000,1100");
+            @display("p=7185.802,4603.482");
         }
         borderGateway2: Router {
-            @display("p=1400,1100");
+            @display("p=8804.718,4668.04");
         }
         otnDevice: Router {
-            @display("p=1200,900");
+            @display("p=8084.648,5343.416");
         }
 
     connections:

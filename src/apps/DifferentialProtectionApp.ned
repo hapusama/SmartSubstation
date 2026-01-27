@@ -5,11 +5,16 @@ import inet.applications.contract.IApp;
 simple DifferentialProtectionApp like IApp
 {
     parameters:
+        // localPort: 本地接收 MU/SV 数据的 UDP 端口
         int localPort = default(2000);
+        // remotePort: 用于接收对端 MU/SV 的 UDP 端口
         int remotePort = default(2001);
+        // threshold: 差动触发阈值（单位 A），当 |I_local - I_remote| > threshold 时触发
         double threshold @unit(A) = default(5A);
+        // gooseDestLocal / gooseDestRemote: GOOSE 三态命令的目的地址（通常为 IT 设备名）
         string gooseDestLocal;
         string gooseDestRemote;
+        // goosePort: 发送 GOOSE 的 UDP 端口
         int goosePort = default(3000);
         @display("i=block/app");
     gates:
