@@ -16,6 +16,10 @@ simple DifferentialProtectionApp like IApp
         string gooseDestRemote;
         // goosePort: 发送 GOOSE 的 UDP 端口
         int goosePort = default(3000);
+        // gooseDscp: GOOSE 报文的 DSCP 值（默认 48=CS6，次高优先级）
+        int gooseDscp = default(48);
+        // recordStats: 是否记录端到端时延/抖动指标
+        bool recordStats = default(true);
         @display("i=block/app");
     gates:
         input socketIn;

@@ -52,6 +52,18 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
     L3Address gooseLocalDest;  // GOOSE 发送目的地址（本地 IT）
     L3Address gooseRemoteDest; // GOOSE 发送目的地址（远端 IT）
     int goosePort;             // GOOSE 目的端口
+    int gooseDscp = 48;        // GOOSE 报文的 DSCP 值（CS6，次高优先级）
+    bool recordStats = true;   // 是否记录端到端时延/抖动
+
+    // 端到端时延/抖动记录
+    cOutVector delayLocalVec;
+    cOutVector delayRemoteVec;
+    cOutVector jitterLocalVec;
+    cOutVector jitterRemoteVec;
+    simtime_t lastDelayLocal;
+    simtime_t lastDelayRemote;
+    bool hasDelayLocal = false;
+    bool hasDelayRemote = false;
 
     // 存储最近一次接收到的電流值（可能为 NaN 表示尚未收到）
     double lastLocal = NAN;
@@ -69,6 +81,13 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
             remotePort = par("remotePort");
             threshold = par("threshold");
             goosePort = par("goosePort");
+            gooseDscp = par("gooseDscp");
+            recordStats = par("recordStats");
+
+            delayLocalVec.setName("svDelayLocal");
+            delayRemoteVec.setName("svDelayRemote");
+            jitterLocalVec.setName("svJitterLocal");
+            jitterRemoteVec.setName("svJitterRemote");
         }
         else if (stage == INITSTAGE_APPLICATION_LAYER) {
             // 在应用层阶段解析地址（依赖于接口表），并初始化/绑定 UDP sockets
@@ -88,6 +107,9 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
             // 配置用于发送 GOOSE 的 socket（未绑定具体端口，使用 ephemeral）
             socketGoose.setOutputGate(gate("socketOut"));
             socketGoose.bind(-1);
+            // 通过 IPv4 TOS 设置 DSCP（DSCP 位于 TOS 的高 6 位）：将 gooseDscp 左移 2 位
+            // 例如 CS6=48 -> TOS=192；此设置将应用于该 socket 发送的所有 GOOSE 报文
+            socketGoose.setTos(gooseDscp << 2);
         }
     }
 
@@ -119,10 +141,32 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
             value = std::stod(m[1].str());
         }
 
+        // 计算端到端时延和抖动（基于 Packet 创建时间）
+        simtime_t sent = packet->getTimestamp();
+        if (sent == SIMTIME_ZERO)
+            sent = packet->getCreationTime();
+        simtime_t delay = simTime() - sent;
+
         // 根据数据来自哪个 socket 更新相应的寄存值
         if (socket == &socketLocal) {
+            if (recordStats) {
+                delayLocalVec.record(delay);
+                if (hasDelayLocal) {
+                    jitterLocalVec.record(delay - lastDelayLocal);
+                }
+                lastDelayLocal = delay;
+                hasDelayLocal = true;
+            }
             lastLocal = value;
         } else {
+            if (recordStats) {
+                delayRemoteVec.record(delay);
+                if (hasDelayRemote) {
+                    jitterRemoteVec.record(delay - lastDelayRemote);
+                }
+                lastDelayRemote = delay;
+                hasDelayRemote = true;
+            }
             lastRemote = value;
         }
 
@@ -137,6 +181,7 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
                 // 构造一个简单的 GOOSE 包并发送到两个 IT 目的地
                 // 注意：这里用 ByteCountChunk(B(64)) 代表报文体占位，没有实现 GOOSE 格式细节
                 auto goosePkt = new Packet("GOOSE:TripCommand");
+                // DSCP 已通过 socket 的 IPv4 TOS 设置（在 initialize 阶段）；此处构造报文体占位。
                 auto chunk = makeShared<ByteCountChunk>(B(64));
                 goosePkt->insertAtBack(chunk);
 

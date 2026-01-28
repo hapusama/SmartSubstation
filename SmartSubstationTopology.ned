@@ -22,6 +22,22 @@ channel WanChannel extends ned.DatarateChannel
     datarate = 100Mbps;
 }
 
+// OTN I/II区专用通道：低延迟、确定性、为SV/GOOSE保留
+channel OTN_I_II_Channel extends ned.DatarateChannel
+{
+    delay = 0.5ms;  // 低延迟
+    datarate = 50Mbps;  // I/II区流量占用
+    @display("ls=green,3");  // 绿色表示优先通道
+}
+
+// OTN III/IV区混跑通道：容纳视频、运维、VoIP等背景流
+channel OTN_III_IV_Channel extends ned.DatarateChannel
+{
+    delay = 1.5ms;  // 中等延迟
+    datarate = 50Mbps;  // III/IV区流量共享
+    @display("ls=blue,2");  // 蓝色表示混跑通道
+}
+
 network SmartSubstationTopology
 {
     parameters:
@@ -207,12 +223,15 @@ network SmartSubstationTopology
         }
 
         // 跨域网络设备
+        // 甲站边界网关：分离I/II与III/IV流量到两条OTN通道
         borderGateway1: Router {
             @display("p=7185.802,4603.482");
         }
+        // 乙站边界网关
         borderGateway2: Router {
             @display("p=8804.718,4668.04");
         }
+        // OTN设备（中心节点）：管理I/II专用与III/IV混跑通道
         otnDevice: Router {
             @display("p=8084.648,5343.416");
         }
@@ -290,9 +309,22 @@ network SmartSubstationTopology
         TSN_B_ACC_CAM1.ethg++ <--> EthChannel <--> TSN_B.ethg++;
         TSN_B_ACC_CAM2.ethg++ <--> EthChannel <--> TSN_B.ethg++;
 
-        // 跨域网络连接
+        // 跨域网络连接（OTN架构）
+        // TSN_A主干连接到边界网关1（承载所有流量）
         TSN_A.ethg++ <--> WanChannel <--> borderGateway1.ethg++;
-        borderGateway1.pppg++ <--> WanChannel <--> otnDevice.pppg++;
-        otnDevice.pppg++ <--> WanChannel <--> borderGateway2.pppg++;
+        
+        // 边界网关1到OTN：分为I/II专用通道和III/IV混跑通道
+        // I/II区（SV/GOOSE）：走专用低延迟通道
+        borderGateway1.pppg++ <--> OTN_I_II_Channel <--> otnDevice.pppg++;
+        // III/IV区（视频/运维/VoIP）：走混跑通道
+        borderGateway1.pppg++ <--> OTN_III_IV_Channel <--> otnDevice.pppg++;
+        
+        // OTN到边界网关2：同样分为I/II与III/IV两条通道
+        // I/II区专用通道
+        otnDevice.pppg++ <--> OTN_I_II_Channel <--> borderGateway2.pppg++;
+        // III/IV区混跑通道
+        otnDevice.pppg++ <--> OTN_III_IV_Channel <--> borderGateway2.pppg++;
+        
+        // TSN_B主干连接到边界网关2
         borderGateway2.ethg++ <--> WanChannel <--> TSN_B.ethg++;
 }

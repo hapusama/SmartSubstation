@@ -27,6 +27,11 @@ class SvGeneratorApp : public cSimpleModule
     double noise;
     int msgLenBytes;
     simtime_t interval;
+    bool faultEnabled = false;
+    simtime_t faultStart;
+    simtime_t faultDuration;
+    double faultDelta = 0;
+    int dscp = 56;
 
   protected:
     // 指定需要的初始化阶段数（常量由 INET/OMNeT 提供）
@@ -45,6 +50,11 @@ class SvGeneratorApp : public cSimpleModule
             noise = par("noiseStd");
             msgLenBytes = par("messageLength");
             interval = par("sendInterval");
+            faultEnabled = par("faultEnabled");
+            faultStart = par("faultStart");
+            faultDuration = par("faultDuration");
+            faultDelta = par("faultDelta");
+            dscp = par("dscp");
             timer = new cMessage("sendTimer");
         }
         else if (stage == INITSTAGE_APPLICATION_LAYER) {
@@ -55,6 +65,9 @@ class SvGeneratorApp : public cSimpleModule
             // 配置 UDP socket 并绑定输出 gate
             socket.setOutputGate(gate("socketOut"));
             socket.bind(-1); // 发送方不需要固定端口，使用 ephemeral port
+            // 通过 IPv4 TOS 设置 DSCP（DSCP 位于 TOS 的高 6 位）：将 dscp 左移 2 位
+            // SV 默认使用 CS7=56 -> TOS=224，优先级高于 GOOSE 的 CS6=48
+            socket.setTos(dscp << 2);
 
             // 启动发送定时器
             scheduleAt(simTime() + interval, timer);
@@ -64,12 +77,15 @@ class SvGeneratorApp : public cSimpleModule
     virtual void handleMessage(cMessage *msg) override {
         // 定时器触发时发送一帧 SV
         if (msg == timer) {
-            // 生成带噪声的采样值
-            double value = normal(base, noise);
+            // 生成带故障扰动的采样值
+            bool inFault = faultEnabled && simTime() >= faultStart && simTime() < (faultStart + faultDuration);
+            double mean = base + (inFault ? faultDelta : 0.0);
+            double value = normal(mean, noise);
             // 将电流值编码到 packet 名称中（示例性做法，实际可用 payload）
             char name[128];
             sprintf(name, "SV:current=%.6f", value);
             auto packet = new Packet(name);
+            packet->setTimestamp(simTime());
             // 使用 ByteCountChunk 指定包长（仅用于占位）
             const auto chunk = makeShared<ByteCountChunk>(B(msgLenBytes));
             packet->insertAtBack(chunk);

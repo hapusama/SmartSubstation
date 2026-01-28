@@ -21,6 +21,13 @@ simple SvGeneratorApp like IApp
         double sendInterval @unit(s) = default(0.00025s);
         // messageLength: 每帧字节数（字节），用于构造 Packet 的 ByteCountChunk
         int messageLength @unit(B) = default(140B);
+        // dscp: 为 SV 报文设置的 DSCP（例如 56=CS7，最高优先级）
+        int dscp = default(56);
+        // fault injection: 是否在指定时间窗口叠加故障电流（用于触发差动动作）
+        bool faultEnabled = default(false);
+        double faultStart @unit(s) = default(2s);
+        double faultDuration @unit(s) = default(0.02s);
+        double faultDelta @unit(A) = default(200A);
         @display("i=block/app");
     gates:
         input socketIn;
