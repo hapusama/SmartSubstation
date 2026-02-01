@@ -1,4 +1,5 @@
 #include <omnetpp.h>
+#include <cmath>
 #include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/Units.h"
@@ -32,6 +33,8 @@ class SvGeneratorApp : public cSimpleModule
     simtime_t faultDuration;
     double faultDelta = 0;
     int dscp = 56;
+    long long seq = 0;
+    long txCount = 0;
 
   protected:
     // 指定需要的初始化阶段数（常量由 INET/OMNeT 提供）
@@ -81,9 +84,10 @@ class SvGeneratorApp : public cSimpleModule
             bool inFault = faultEnabled && simTime() >= faultStart && simTime() < (faultStart + faultDuration);
             double mean = base + (inFault ? faultDelta : 0.0);
             double value = normal(mean, noise);
-            // 将电流值编码到 packet 名称中（示例性做法，实际可用 payload）
+            // 将电流值与时隙标签编码到 packet 名称中（示例性做法，实际可用 payload）
             char name[128];
-            sprintf(name, "SV:current=%.6f", value);
+            long long slot = (long long)floor(simTime().dbl() / interval.dbl());
+            sprintf(name, "SV:slot=%lld seq=%lld current=%.6f", slot, seq, value);
             auto packet = new Packet(name);
             packet->setTimestamp(simTime());
             // 使用 ByteCountChunk 指定包长（仅用于占位）
@@ -92,6 +96,8 @@ class SvGeneratorApp : public cSimpleModule
             // 发送到本地保护（本地复制）和远端保护
             socket.sendTo(packet->dup(), localDest, localPort);
             socket.sendTo(packet, remoteDest, remotePort);
+            txCount += 2;
+            seq++;
             // 安排下一次发送
             scheduleAt(simTime() + interval, timer);
         }
@@ -103,6 +109,8 @@ class SvGeneratorApp : public cSimpleModule
 
     virtual void finish() override {
         cancelAndDelete(timer);
+        EV_INFO << getFullPath() << ": sent SV packets=" << txCount << endl;
+        recordScalar("svTxCount", txCount);
     }
 };
 

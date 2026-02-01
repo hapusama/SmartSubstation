@@ -1,6 +1,7 @@
 #include <omnetpp.h>
 #include <regex>
 #include <cmath>
+#include <unordered_map>
 #include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/Units.h"
@@ -65,9 +66,34 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
     bool hasDelayLocal = false;
     bool hasDelayRemote = false;
 
+    // 接收计数（用于运行结束时打印）
+    long localRxCount = 0;
+    long remoteRxCount = 0;
+
+    // 差动比较计数与超阈值计数（按配对时隙/样本统计）
+    long matchedSvCount = 0;
+    long overThresholdCount = 0;
+
     // 存储最近一次接收到的電流值（可能为 NaN 表示尚未收到）
     double lastLocal = NAN;
     double lastRemote = NAN;
+
+    // 是否严格按时隙标签匹配：true 时只在“同一时隙 slot”成对后才计算差值
+    bool strictSlotMatch = true;
+    int maxSlotLag = 10;
+
+    // 按时隙缓存样本值（slot -> 电流值），用于配对
+    std::unordered_map<long long, double> localSamples;
+    std::unordered_map<long long, double> remoteSamples;
+
+    void pruneOldSamples(std::unordered_map<long long, double> &samples, long long minSlot) {
+        for (auto it = samples.begin(); it != samples.end(); ) {
+            if (it->first < minSlot)
+                it = samples.erase(it);
+            else
+                ++it;
+        }
+    }
 
   protected:
     // 需要多个初始化阶段以确保网络接口表等可解析地址的组件已就绪
@@ -83,6 +109,8 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
             goosePort = par("goosePort");
             gooseDscp = par("gooseDscp");
             recordStats = par("recordStats");
+            strictSlotMatch = par("strictSlotMatch");
+            maxSlotLag = par("maxSlotLag");
 
             delayLocalVec.setName("svDelayLocal");
             delayRemoteVec.setName("svDelayRemote");
@@ -140,6 +168,13 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
         if (std::regex_search(name, m, std::regex("current=([+-]?[0-9]*\\.?[0-9]+)"))) {
             value = std::stod(m[1].str());
         }
+        // 从报文名中解析时隙标签 slot（由 SV 发送端写入）
+        long long slot = -1;
+        bool hasSlot = false;
+        if (std::regex_search(name, m, std::regex("slot=([0-9]+)"))) {
+            slot = std::stoll(m[1].str());
+            hasSlot = true;
+        }
 
         // 计算端到端时延和抖动（基于 Packet 创建时间）
         simtime_t sent = packet->getTimestamp();
@@ -149,6 +184,7 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
 
         // 根据数据来自哪个 socket 更新相应的寄存值
         if (socket == &socketLocal) {
+            localRxCount++;
             if (recordStats) {
                 delayLocalVec.record(delay);
                 if (hasDelayLocal) {
@@ -159,6 +195,7 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
             }
             lastLocal = value;
         } else {
+            remoteRxCount++;
             if (recordStats) {
                 delayRemoteVec.record(delay);
                 if (hasDelayRemote) {
@@ -173,11 +210,60 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
         // 释放 packet（我们没有进一步解析其 payload）
         delete packet;
 
-        // 当两侧都有有效电流值时计算差动并判决
+        if (std::isnan(value))
+            return;
+
+        // 严格按时隙标签匹配：同一 slot 成对后才计算差值
+        if (strictSlotMatch) {
+            // 没有 slot 标签则不参与配对
+            if (!hasSlot) {
+                EV_WARN << "SV packet missing slot tag; ignored in strict mode" << endl;
+                return;
+            }
+            // 将本地/远端样本按 slot 缓存
+            if (socket == &socketLocal)
+                localSamples[slot] = value;
+            else
+                remoteSamples[slot] = value;
+
+            // 清理过旧的样本，避免缓存无限增长
+            long long minSlot = slot - maxSlotLag;
+            if (maxSlotLag > 0) {
+                pruneOldSamples(localSamples, minSlot);
+                pruneOldSamples(remoteSamples, minSlot);
+            }
+
+            // 若本地与远端同一 slot 都已到达，则执行差动计算
+            auto itLocal = localSamples.find(slot);
+            auto itRemote = remoteSamples.find(slot);
+            if (itLocal != localSamples.end() && itRemote != remoteSamples.end()) {
+                double diff = fabs(itLocal->second - itRemote->second);
+                matchedSvCount++;
+                EV_INFO << "Differential(slot=" << slot << ") |I_local - I_remote| = " << diff
+                        << " A, threshold=" << threshold << endl;
+                if (diff > threshold) {
+                    overThresholdCount++;
+                    // 超阈值则发送 GOOSE Trip 报文
+                    auto goosePkt = new Packet("GOOSE:TripCommand");
+                    auto chunk = makeShared<ByteCountChunk>(B(64));
+                    goosePkt->insertAtBack(chunk);
+                    socketGoose.sendTo(goosePkt->dup(), gooseLocalDest, goosePort);
+                    socketGoose.sendTo(goosePkt, gooseRemoteDest, goosePort);
+                }
+                // 该 slot 已处理，移除缓存
+                localSamples.erase(slot);
+                remoteSamples.erase(slot);
+            }
+            return;
+        }
+
+        // 非严格模式：当两侧都有有效电流值时计算差动并判决
         if (!std::isnan(lastLocal) && !std::isnan(lastRemote)) {
             double diff = fabs(lastLocal - lastRemote);
+            matchedSvCount++;
             EV_INFO << "Differential |I_local - I_remote| = " << diff << " A, threshold=" << threshold << endl;
             if (diff > threshold) {
+                overThresholdCount++;
                 // 构造一个简单的 GOOSE 包并发送到两个 IT 目的地
                 // 注意：这里用 ByteCountChunk(B(64)) 代表报文体占位，没有实现 GOOSE 格式细节
                 auto goosePkt = new Packet("GOOSE:TripCommand");
@@ -199,6 +285,20 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
 
     // socket 被关闭的回调（本示例不需要特殊处理）
     virtual void socketClosed(UdpSocket *socket) override {}
+
+    virtual void finish() override {
+        EV_INFO << getFullPath() << ": received local=" << localRxCount
+                << ", remote=" << remoteRxCount << " packets" << endl;
+        EV_INFO << getFullPath() << ": received total=" << (localRxCount + remoteRxCount)
+            << " packets" << endl;
+        EV_INFO << getFullPath() << ": matchedSv=" << matchedSvCount
+            << ", overThreshold=" << overThresholdCount << endl;
+        recordScalar("localRxCount", localRxCount);
+        recordScalar("remoteRxCount", remoteRxCount);
+        recordScalar("totalRxCount", localRxCount + remoteRxCount);
+        recordScalar("matchedSvCount", matchedSvCount);
+        recordScalar("overThresholdCount", overThresholdCount);
+    }
 };
 
 // 将模块注册到 OMNeT++ 模块工厂

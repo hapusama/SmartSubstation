@@ -20,6 +20,10 @@ simple DifferentialProtectionApp like IApp
         int gooseDscp = default(48);
         // recordStats: 是否记录端到端时延/抖动指标
         bool recordStats = default(true);
+        // strictSlotMatch: 是否严格按时隙标签匹配本地/远端 SV
+        bool strictSlotMatch = default(true);
+        // maxSlotLag: 允许缓存的最大时隙滞后，用于清理过旧样本
+        int maxSlotLag = default(1000);
         @display("i=block/app");
     gates:
         input socketIn;

@@ -1,5 +1,5 @@
 import inet.node.inet.StandardHost;
-import inet.node.ethernet.EthernetSwitch;
+import inet.node.tsn.TsnSwitch;
 import inet.node.inet.Router;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 
@@ -50,26 +50,26 @@ network SmartSubstationTopology
         }
 
         // 甲站设备
-        TSN_A: EthernetSwitch {
+        TSN_A: TsnSwitch {
             @display("p=4340.2837,4156.542;i=block/switch,blue");
         }
         // 甲站各类接入TSN（保护、母线SV分三条、视频语音/运维）
-        TSN_A_ACC_PROT: EthernetSwitch {
+        TSN_A_ACC_PROT: TsnSwitch {
             @display("p=2045.992,2944.838;i=block/switch,blue");
         }
-        TSN_A_ACC_BUS1: EthernetSwitch {
+        TSN_A_ACC_BUS1: TsnSwitch {
             @display("p=1042.86,3828.786;i=block/switch,blue");
         }
-        TSN_A_ACC_BUS2: EthernetSwitch {
+        TSN_A_ACC_BUS2: TsnSwitch {
             @display("p=4042.324,2180.074;i=block/switch,blue");
         }
-        TSN_A_ACC_BUS3: EthernetSwitch {
+        TSN_A_ACC_BUS3: TsnSwitch {
             @display("p=3237.832,2244.6318;i=block/switch,blue");
         }
-        TSN_A_ACC_CAM1: EthernetSwitch {
+        TSN_A_ACC_CAM1: TsnSwitch {
             @display("p=1897.012,5214.3;i=block/switch,blue");
         }
-        TSN_A_ACC_CAM2: EthernetSwitch {
+        TSN_A_ACC_CAM2: TsnSwitch {
             @display("p=5815.186,5795.322;i=block/switch,blue");
         }
         MU_A: StandardHost {
@@ -134,26 +134,26 @@ network SmartSubstationTopology
         }
 
         // 乙站设备（整体右移以便区分）
-        TSN_B: EthernetSwitch {
+        TSN_B: TsnSwitch {
             @display("p=11039.418,4350.216;i=block/switch,blue");
         }
         // 乙站各类接入TSN
-        TSN_B_ACC_PROT: EthernetSwitch {
+        TSN_B_ACC_PROT: TsnSwitch {
             @display("p=10711.662,2060.89;i=block/switch,blue");
         }
-        TSN_B_ACC_BUS1: EthernetSwitch {
+        TSN_B_ACC_BUS1: TsnSwitch {
             @display("p=12102.142,5760.56;i=block/switch,blue");
         }
-        TSN_B_ACC_BUS2: EthernetSwitch {
+        TSN_B_ACC_BUS2: TsnSwitch {
             @display("p=10815.948,5844.982;i=block/switch,blue");
         }
-        TSN_B_ACC_BUS3: EthernetSwitch {
+        TSN_B_ACC_BUS3: TsnSwitch {
             @display("p=9763.156,5795.322;i=block/switch,blue");
         }
-        TSN_B_ACC_CAM1: EthernetSwitch {
+        TSN_B_ACC_CAM1: TsnSwitch {
             @display("p=8760.023,1961.57;i=block/switch,blue");
         }
-        TSN_B_ACC_CAM2: EthernetSwitch {
+        TSN_B_ACC_CAM2: TsnSwitch {
             @display("p=12186.563,2468.102;i=block/switch,blue");
         }
         MU_B: StandardHost {
