@@ -53,10 +53,7 @@ network SmartSubstationTopology
         TSN_A: TsnSwitch {
             @display("p=4340.2837,4156.542;i=block/switch,blue");
         }
-        // 甲站各类接入TSN（保护、母线SV分三条、视频语音/运维）
-        TSN_A_ACC_PROT: TsnSwitch {
-            @display("p=2045.992,2944.838;i=block/switch,blue");
-        }
+        // 甲站二级TSN：3个间隔MU + 1个综合接入
         TSN_A_ACC_BUS1: TsnSwitch {
             @display("p=1042.86,3828.786;i=block/switch,blue");
         }
@@ -66,11 +63,8 @@ network SmartSubstationTopology
         TSN_A_ACC_BUS3: TsnSwitch {
             @display("p=3237.832,2244.6318;i=block/switch,blue");
         }
-        TSN_A_ACC_CAM1: TsnSwitch {
-            @display("p=1897.012,5214.3;i=block/switch,blue");
-        }
-        TSN_A_ACC_CAM2: TsnSwitch {
-            @display("p=5815.186,5795.322;i=block/switch,blue");
+        TSN_A_ACC_COMMON: TsnSwitch {
+            @display("p=2045.992,2944.838;i=block/switch,orange");
         }
         MU_A: StandardHost {
             @display("p=1042.86,2274.428;i=block/switch,green");
@@ -137,10 +131,7 @@ network SmartSubstationTopology
         TSN_B: TsnSwitch {
             @display("p=11039.418,4350.216;i=block/switch,blue");
         }
-        // 乙站各类接入TSN
-        TSN_B_ACC_PROT: TsnSwitch {
-            @display("p=10711.662,2060.89;i=block/switch,blue");
-        }
+        // 乙站二级TSN：3个间隔MU + 1个综合接入
         TSN_B_ACC_BUS1: TsnSwitch {
             @display("p=12102.142,5760.56;i=block/switch,blue");
         }
@@ -150,11 +141,8 @@ network SmartSubstationTopology
         TSN_B_ACC_BUS3: TsnSwitch {
             @display("p=9763.156,5795.322;i=block/switch,blue");
         }
-        TSN_B_ACC_CAM1: TsnSwitch {
-            @display("p=8760.023,1961.57;i=block/switch,blue");
-        }
-        TSN_B_ACC_CAM2: TsnSwitch {
-            @display("p=12186.563,2468.102;i=block/switch,blue");
+        TSN_B_ACC_COMMON: TsnSwitch {
+            @display("p=10711.662,2060.89;i=block/switch,orange");
         }
         MU_B: StandardHost {
             @display("p=10642.138,1206.7379;i=block/switch,green");
@@ -237,77 +225,69 @@ network SmartSubstationTopology
         }
 
     connections:
-        // 甲站关键保护：接入保护接入TSN，再上联核心
-        MU_A.ethg++ <--> HighPriorityChannel <--> TSN_A_ACC_PROT.ethg++;
-        Protection_A.ethg++ <--> HighPriorityChannel <--> TSN_A_ACC_PROT.ethg++;
-        IT_A.ethg++ <--> HighPriorityChannel <--> TSN_A_ACC_PROT.ethg++;
-        TSN_A_ACC_PROT.ethg++ <--> EthChannel <--> TSN_A.ethg++;
+        // 甲站综合接入TSN：MU、保护、IT、所有摄像头和VoIP
+        MU_A.ethg++ <--> HighPriorityChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Protection_A.ethg++ <--> HighPriorityChannel <--> TSN_A_ACC_COMMON.ethg++;
+        IT_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera3_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera4_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera5_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera6_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera7_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera8_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera9_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        Camera10_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        VoIP1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        VoIP2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
+        TSN_A_ACC_COMMON.ethg++ <--> EthChannel <--> TSN_A.ethg++;
 
-        // 甲站母线保护：间隔MU接入母线接入TSN，上联核心，再到母线保护装置
+        // 甲站母线保护：3个间隔MU分别接入各自的母线TSN
         BusProtection_MU1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_BUS1.ethg++;
         BusProtection_MU2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_BUS2.ethg++;
         BusProtection_MU3_A.ethg++ <--> EthChannel <--> TSN_A_ACC_BUS3.ethg++;
         TSN_A_ACC_BUS1.ethg++ <--> EthChannel <--> TSN_A.ethg++;
         TSN_A_ACC_BUS2.ethg++ <--> EthChannel <--> TSN_A.ethg++;
         TSN_A_ACC_BUS3.ethg++ <--> EthChannel <--> TSN_A.ethg++;
+        
+        // 甲站母线保护和监控中心直连核心TSN
         BusProtection_A.ethg++ <--> EthChannel <--> TSN_A.ethg++;
-
-        // 甲站视频/语音/运维：分两个接入TSN汇聚，再上联核心
-        Camera1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-        Camera2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-        Camera3_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-        Camera4_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-        Camera5_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-        VoIP1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM1.ethg++;
-
-        Camera6_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
-        Camera7_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
-        Camera8_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
-        Camera9_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
-        Camera10_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
-        VoIP2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_CAM2.ethg++;
         MonitoringCenter_A.ethg++ <--> EthChannel <--> TSN_A.ethg++;
 
-        TSN_A_ACC_CAM1.ethg++ <--> EthChannel <--> TSN_A.ethg++;
-        TSN_A_ACC_CAM2.ethg++ <--> EthChannel <--> TSN_A.ethg++;
+        // 乙站综合接入TSN：MU、保护、IT、所有摄像头和VoIP
+        MU_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Protection_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_COMMON.ethg++;
+        IT_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera1_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera2_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera3_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera4_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera5_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera6_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera7_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera8_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera9_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        Camera10_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        VoIP1_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        VoIP2_B.ethg++ <--> EthChannel <--> TSN_B_ACC_COMMON.ethg++;
+        TSN_B_ACC_COMMON.ethg++ <--> EthChannel <--> TSN_B.ethg++;
 
-        // 乙站关键保护：接入保护接入TSN，再上联核心
-        MU_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_PROT.ethg++;
-        Protection_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_PROT.ethg++;
-        IT_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_PROT.ethg++;
-        TSN_B_ACC_PROT.ethg++ <--> EthChannel <--> TSN_B.ethg++;
-
-        // 乙站母线保护：间隔MU接入母线接入TSN，上联核心，再到母线保护装置
+        // 乙站母线保护：3个间隔MU分别接入各自的母线TSN
         BusProtection_MU1_B.ethg++ <--> EthChannel <--> TSN_B_ACC_BUS1.ethg++;
         BusProtection_MU2_B.ethg++ <--> EthChannel <--> TSN_B_ACC_BUS2.ethg++;
         BusProtection_MU3_B.ethg++ <--> EthChannel <--> TSN_B_ACC_BUS3.ethg++;
         TSN_B_ACC_BUS1.ethg++ <--> EthChannel <--> TSN_B.ethg++;
         TSN_B_ACC_BUS2.ethg++ <--> EthChannel <--> TSN_B.ethg++;
         TSN_B_ACC_BUS3.ethg++ <--> EthChannel <--> TSN_B.ethg++;
+        
+        // 乙站母线保护和监控中心直连核心TSN
         BusProtection_B.ethg++ <--> EthChannel <--> TSN_B.ethg++;
-
-        // 乙站视频/语音/运维：分两个接入TSN汇聚，再上联核心
-        Camera1_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-        Camera2_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-        Camera3_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-        Camera4_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-        Camera5_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-        VoIP1_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM1.ethg++;
-
-        Camera6_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
-        Camera7_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
-        Camera8_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
-        Camera9_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
-        Camera10_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
-        VoIP2_B.ethg++ <--> EthChannel <--> TSN_B_ACC_CAM2.ethg++;
         MonitoringCenter_B.ethg++ <--> EthChannel <--> TSN_B.ethg++;
 
         // 主站监控中心直连两站核心TSN
         TSN_A.ethg++ <--> EthChannel <--> MonitoringCenter_Main.ethg++;
         TSN_B.ethg++ <--> EthChannel <--> MonitoringCenter_Main.ethg++;
-
-        TSN_B_ACC_CAM1.ethg++ <--> EthChannel <--> TSN_B.ethg++;
-        TSN_B_ACC_CAM2.ethg++ <--> EthChannel <--> TSN_B.ethg++;
 
         // 跨域网络连接（OTN架构）
         // TSN_A主干连接到边界网关1（承载所有流量）
