@@ -215,7 +215,7 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
 
         // 严格按时隙标签匹配：同一 slot 成对后才计算差值
         if (strictSlotMatch) {
-            // 没有 slot 标签则不参与配对
+            // 没有 slot 字段则不参与配对
             if (!hasSlot) {
                 EV_WARN << "SV packet missing slot tag; ignored in strict mode" << endl;
                 return;

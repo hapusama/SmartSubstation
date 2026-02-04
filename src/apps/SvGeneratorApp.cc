@@ -86,7 +86,10 @@ class SvGeneratorApp : public cSimpleModule
             double value = normal(mean, noise);
             // 将电流值与时隙标签编码到 packet 名称中（示例性做法，实际可用 payload）
             char name[128];
+            // slot 计算：基于发送时间与发送间隔计算时隙编号，interval是demo传进来的报文发送间隔
+            // floor的作用在于向下取整，确保时隙编号是整数
             long long slot = (long long)floor(simTime().dbl() / interval.dbl());
+
             sprintf(name, "SV:slot=%lld seq=%lld current=%.6f", slot, seq, value);
             auto packet = new Packet(name);
             packet->setTimestamp(simTime());
