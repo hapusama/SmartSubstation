@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<analysis version="2">
+    <inputs>
+        <input pattern="/SmartSubstation/results/TSN-*.vec"/>
+        <input pattern="/SmartSubstation/results/TSN-*.sca"/>
+        <input pattern="results/NoTSN-#0.sca"/>
+        <input pattern="results/TSN-#0.sca"/>
+    </inputs>
+    <charts/>
+</analysis>
