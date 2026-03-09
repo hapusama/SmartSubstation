@@ -241,7 +241,7 @@ network SmartSubstationTopology
         Camera10_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
         VoIP1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
         VoIP2_A.ethg++ <--> EthChannel <--> TSN_A_ACC_COMMON.ethg++;
-        TSN_A_ACC_COMMON.ethg++ <--> EthChannel <--> TSN_A.ethg++;
+        TSN_A_ACC_COMMON.ethg++ <--> EthChannel <--> TSN_A.ethg++; // common eth[15] 这个链路上面是需要布置GCL的
 
         // 甲站母线保护：3个间隔MU分别接入各自的母线TSN
         BusProtection_MU1_A.ethg++ <--> EthChannel <--> TSN_A_ACC_BUS1.ethg++;
@@ -253,7 +253,7 @@ network SmartSubstationTopology
 
         // 甲站母线保护和监控中心直连核心TSN
         BusProtection_A.ethg++ <--> EthChannel <--> TSN_A.ethg++;
-        MonitoringCenter_A.ethg++ <--> EthChannel <--> TSN_A.ethg++;
+        MonitoringCenter_A.ethg++ <--> EthChannel <--> TSN_A.ethg++;// tsn_a eth[5] 这个链路上面是需要布置GCL的
 
         // 乙站综合接入TSN：MU、保护、IT、所有摄像头和VoIP
         MU_B.ethg++ <--> HighPriorityChannel <--> TSN_B_ACC_COMMON.ethg++;
@@ -286,7 +286,7 @@ network SmartSubstationTopology
         MonitoringCenter_B.ethg++ <--> EthChannel <--> TSN_B.ethg++;
 
         // 主站监控中心直连两站核心TSN
-        TSN_A.ethg++ <--> EthChannel <--> MonitoringCenter_Main.ethg++;
+        TSN_A.ethg++ <--> EthChannel <--> MonitoringCenter_Main.ethg++; //tsn_a eth[6] 这个链路也要陪TAS
         TSN_B.ethg++ <--> EthChannel <--> MonitoringCenter_Main.ethg++;
 
         // 跨域网络连接（OTN架构）
