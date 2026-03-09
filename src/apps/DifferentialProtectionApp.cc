@@ -1,11 +1,13 @@
 #include <omnetpp.h>
 #include <regex>
 #include <cmath>
+#include <string>
 #include <unordered_map>
 #include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/Units.h"
 #include "inet/common/packet/chunk/ByteCountChunk.h"
+#include "inet/common/packet/chunk/BytesChunk.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/common/InitStages.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -160,18 +162,24 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
 
     // UdpSocket 的回调：当数据到达时调用
     virtual void socketDataArrived(UdpSocket *socket, Packet *packet) override {
-        // 本实现假设 SV 报文的 Packet::getName() 中包含类似 "current=123.45" 的文本
-        // 因此直接在名字中用正则提取电流值（简化处理，未解析二进制报文体）
-        std::string name = packet->getName();
+        // 从报文负载读取 SV 字段（slot/seq/current），不再依赖 packet name。
+        std::string payload;
+        auto frontChunk = packet->peekAtFront<Chunk>();
+        auto bytesChunk = dynamicPtrCast<const BytesChunk>(frontChunk);
+        if (bytesChunk != nullptr) {
+            const auto& bytes = bytesChunk->getBytes();
+            payload.assign(bytes.begin(), bytes.end());
+        }
+
         std::smatch m;
         double value = NAN;
-        if (std::regex_search(name, m, std::regex("current=([+-]?[0-9]*\\.?[0-9]+)"))) {
+        if (std::regex_search(payload, m, std::regex("current=([+-]?[0-9]*\\.?[0-9]+)"))) {
             value = std::stod(m[1].str());
         }
-        // 从报文名中解析时隙标签 slot（由 SV 发送端写入）
+        // 从报文负载中解析时隙标签 slot（由 SV 发送端写入）
         long long slot = -1;
         bool hasSlot = false;
-        if (std::regex_search(name, m, std::regex("slot=([0-9]+)"))) {
+        if (std::regex_search(payload, m, std::regex("slot=([0-9]+)"))) {
             slot = std::stoll(m[1].str());
             hasSlot = true;
         }
@@ -233,9 +241,10 @@ class DifferentialProtectionApp : public cSimpleModule, public UdpSocket::ICallb
                 pruneOldSamples(remoteSamples, minSlot);
             }
 
-            // 若本地与远端同一 slot 都已到达，则执行差动计算
+            // 若本地与远端同一 slot 都已到达，则执行差动计算，这个xxxsamples是map类型的变量 slot:value
             auto itLocal = localSamples.find(slot);
             auto itRemote = remoteSamples.find(slot);
+            // 假如说没有找到对应 slot 的样本，find会返回end
             if (itLocal != localSamples.end() && itRemote != remoteSamples.end()) {
                 double diff = fabs(itLocal->second - itRemote->second);
                 matchedSvCount++;

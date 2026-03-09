@@ -1,9 +1,12 @@
 #include <omnetpp.h>
 #include <cmath>
+#include <string>
+#include <vector>
 #include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/Units.h"
 #include "inet/common/packet/chunk/ByteCountChunk.h"
+#include "inet/common/packet/chunk/BytesChunk.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/common/InitStages.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -72,7 +75,7 @@ class SvGeneratorApp : public cSimpleModule
             // SV 默认使用 CS7=56 -> TOS=224，优先级高于 GOOSE 的 CS6=48
             socket.setTos(dscp << 2);
 
-            // 启动发送定时器
+            // 启动发送定时器，每隔 interval将timer传给handleMessage处理，触发发送SV报文
             scheduleAt(simTime() + interval, timer);
         }
     }
@@ -80,22 +83,31 @@ class SvGeneratorApp : public cSimpleModule
     virtual void handleMessage(cMessage *msg) override {
         // 定时器触发时发送一帧 SV
         if (msg == timer) {
-            // 生成带故障扰动的采样值
+            // 生成带故障扰动的采样值，但是事实上infault就算是false，计算过程中也会出现超过阈值的情况，因为噪声的存在可能导致采样值偏离基值超过阈值。
             bool inFault = faultEnabled && simTime() >= faultStart && simTime() < (faultStart + faultDuration);
-            double mean = base + (inFault ? faultDelta : 0.0);
+            double mean = base + (inFault ? faultDelta : 0.0); // base是来自于currentBase
             double value = normal(mean, noise);
-            // 将电流值与时隙标签编码到 packet 名称中（示例性做法，实际可用 payload）
-            char name[128];
             // slot 计算：基于发送时间与发送间隔计算时隙编号，interval是demo传进来的报文发送间隔
             // floor的作用在于向下取整，确保时隙编号是整数
             long long slot = (long long)floor(simTime().dbl() / interval.dbl());
 
-            sprintf(name, "SV:slot=%lld seq=%lld current=%.6f", slot, seq, value);
-            auto packet = new Packet(name);
+            // 将业务字段写入报文负载，而不是写到 packet name 里。
+            std::string payload = "slot=" + std::to_string(slot)
+                                + ";seq=" + std::to_string(seq)
+                                + ";current=" + std::to_string(value);
+            std::vector<uint8_t> payloadBytes(payload.begin(), payload.end());
+
+            auto packet = new Packet("SV");
             packet->setTimestamp(simTime());
-            // 使用 ByteCountChunk 指定包长（仅用于占位）
-            const auto chunk = makeShared<ByteCountChunk>(B(msgLenBytes));
-            packet->insertAtBack(chunk);
+            const auto svChunk = makeShared<BytesChunk>(payloadBytes);
+            packet->insertAtBack(svChunk);
+
+            // 若配置的报文长度更大，则补齐占位字节，保持链路负载规模不变。
+            int paddingBytes = msgLenBytes - static_cast<int>(payloadBytes.size());
+            if (paddingBytes > 0) {
+                const auto padding = makeShared<ByteCountChunk>(B(paddingBytes));
+                packet->insertAtBack(padding);
+            }
             // 发送到本地保护（本地复制）和远端保护
             socket.sendTo(packet->dup(), localDest, localPort);
             socket.sendTo(packet, remoteDest, remotePort);
